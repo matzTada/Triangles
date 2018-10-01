@@ -33,24 +33,31 @@ var cellsize = 100;
 var gazous = [];
 var gazoucnt = 0;
 
-
 // gui
 var gui;
 var guivisible = true;
 
+var cellshape = ["triangle", "rectangle", "circle"];
+
 
 function setup() {
+  // Setting up p5js canvas
   var can = createCanvas(windowWidth, windowHeight);
   can.parent("p5canvas");
   background(127);
 
+  // for GUI
   gui = createGui("MATZTRI");
   gui.addGlobals(
-    "cellsize",
+    "cellsize", "cellshape"
     );
+
+  // load sample image.
+  gazous.push(loadImage("./resources/sample.jpg"));
 }
 
 function draw() {
+  background(127);
 
   var tmpbaseimg;
   if(gazous.length > 0){ // deside color
@@ -59,53 +66,55 @@ function draw() {
   if(gazous.length > 0){ // deside color
     var tmpbaseimg = gazous[gazous.length - 1];
 
-    // for (var tmpy = 0; tmpy < height; tmpy+=cellsize) {
-    //   for (var tmpx = 0; tmpx < height; tmpx+=cellsize) {
-    //     var tmpiro;
-    //     tmpiro = tmpbaseimg.get(
-    //       map(tmpx, 0, width, 0, tmpbaseimg.width),
-    //       map(tmpy, 0, height, 0, tmpbaseimg.height)
-    //       );
-    //     tmpiro = color(red(tmpiro), green(tmpiro), blue(tmpiro));
-    //     noStroke();
-    //     fill(tmpiro);
-    //     rect(tmpx, tmpy, cellsize, cellsize);
-    //     // ellipse(tmpx, tmpy, cellsize, cellsize);
-    //   }
-    // }
+    if(cellshape == "rectangle" || cellshape == "circle"){
+      for (var tmpy = 0; tmpy < height; tmpy+=cellsize) {
+        for (var tmpx = 0; tmpx < width; tmpx+=cellsize) {
+          var tmpiro;
+          tmpiro = tmpbaseimg.get(
+            map(tmpx, 0, width, 0, tmpbaseimg.width),
+            map(tmpy, 0, height, 0, tmpbaseimg.height)
+            );
+          tmpiro = color(red(tmpiro), green(tmpiro), blue(tmpiro));
+          noStroke();
+          fill(tmpiro);
+          if(cellshape == "rectangle") rect(tmpx, tmpy, cellsize, cellsize);
+          else if(cellshape == "circle") ellipse(tmpx, tmpy, cellsize, cellsize);
+        }
+      }
+    }else if(cellshape == "triangle"){
+      // for Triangle
+      var toggle = true;
+      for (var tmpy = 0; tmpy < height; tmpy+= sqrt(3)*cellsize/2) {
+        toggle = !toggle;
+        var tmpx = -1*cellsize;
+        if(toggle) tmpx += 0.5*cellsize;
+        for (; tmpx < width; tmpx+=cellsize) {
+          var p1 = createVector(tmpx, tmpy);
+          var p2 = createVector(tmpx + cellsize, tmpy);
+          var p3 = createVector(tmpx + 0.5*cellsize, tmpy + sqrt(3)*cellsize/2);
+          var p4 = createVector(tmpx + 1.5*cellsize, tmpy + sqrt(3)*cellsize/2);
+          var c1 = createVector((p1.x+p2.x+p3.x)/3, (p1.y+p2.y+p3.y)/3)
+          var c2 = createVector((p4.x+p2.x+p3.x)/3, (p4.y+p2.y+p3.y)/3)
 
-    // for Triangle
-    var toggle = true;
-    for (var tmpy = 0; tmpy < height; tmpy+= sqrt(3)/2*cellsize) {
-      toggle = !toggle;
-      var tmpx = -0.5*cellsize;
-      if(toggle) tmpx += 0.5*cellsize;
-      for (; tmpx < width; tmpx+=cellsize) {
-        var p1 = createVector(tmpx, tmpy);
-        var p2 = createVector(tmpx + cellsize, tmpy);
-        var p3 = createVector(tmpx + 0.5*cellsize, tmpy + sqrt(3)/2*cellsize);
-        var p4 = createVector(tmpx + 1.5*cellsize, tmpy + sqrt(3)/2*cellsize);
-        var c1 = createVector((p1.x+p2.x+p3.x)/3, (p1.y+p2.y+p3.y)/3)
-        var c2 = createVector((p4.x+p2.x+p3.x)/3, (p4.y+p2.y+p3.y)/3)
+          var tmpiro;
+          tmpiro = tmpbaseimg.get(
+            map(c1.x, 0, width, 0, tmpbaseimg.width),
+            map(c1.y, 0, height, 0, tmpbaseimg.height)
+            );
+          tmpiro = color(red(tmpiro), green(tmpiro), blue(tmpiro));
+          noStroke();
+          fill(tmpiro);
+          drawTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
 
-        var tmpiro;
-        tmpiro = tmpbaseimg.get(
-          map(c1.x, 0, width, 0, tmpbaseimg.width),
-          map(c1.y, 0, height, 0, tmpbaseimg.height)
-          );
-        tmpiro = color(red(tmpiro), green(tmpiro), blue(tmpiro));
-        noStroke();
-        fill(tmpiro);
-        drawTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
-
-        tmpiro = tmpbaseimg.get(
-          map(c2.x, 0, width, 0, tmpbaseimg.width),
-          map(c2.y, 0, height, 0, tmpbaseimg.height)
-          );
-        tmpiro = color(red(tmpiro), green(tmpiro), blue(tmpiro));
-        noStroke();
-        fill(tmpiro);
-        drawTriangle(p4.x, p4.y, p2.x, p2.y, p3.x, p3.y);
+          tmpiro = tmpbaseimg.get(
+            map(c2.x, 0, width, 0, tmpbaseimg.width),
+            map(c2.y, 0, height, 0, tmpbaseimg.height)
+            );
+          tmpiro = color(red(tmpiro), green(tmpiro), blue(tmpiro));
+          noStroke();
+          fill(tmpiro);
+          drawTriangle(p4.x, p4.y, p2.x, p2.y, p3.x, p3.y);
+        }
       }
     }
   }
