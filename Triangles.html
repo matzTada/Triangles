@@ -33,11 +33,15 @@ var cellsize = 100;
 var gazous = [];
 var gazoucnt = 0;
 
+// kmeans
+var knum = 10;
+var kloop = 10;
+
 // gui
 var gui;
 var guivisible = true;
 
-var cellshape = ["triangle", "rectangle", "circle"];
+var cellshape = ["rectangle", "triangle", "circle"];
 
 
 function setup() {
@@ -49,11 +53,19 @@ function setup() {
   // for GUI
   gui = createGui("MATZTRI");
   gui.addGlobals(
-    "cellsize", "cellshape"
+    "cellsize", "cellshape", "knum", "kloop"
     );
 
   // load sample image.
   gazous.push(loadImage("./resources/sample.jpg"));
+}
+
+function getColorFromImage(_tmpimg, _x, _y, _w, _h){
+  var tmpiro = _tmpimg.get(
+    map(_x, 0, _w, 0, _tmpimg.width),
+    map(_y, 0, _h, 0, _tmpimg.height)
+    );
+  return color(red(tmpiro), green(tmpiro), blue(tmpiro))
 }
 
 function draw() {
@@ -69,12 +81,7 @@ function draw() {
     if(cellshape == "rectangle" || cellshape == "circle"){
       for (var tmpy = 0; tmpy < height; tmpy+=cellsize) {
         for (var tmpx = 0; tmpx < width; tmpx+=cellsize) {
-          var tmpiro;
-          tmpiro = tmpbaseimg.get(
-            map(tmpx, 0, width, 0, tmpbaseimg.width),
-            map(tmpy, 0, height, 0, tmpbaseimg.height)
-            );
-          tmpiro = color(red(tmpiro), green(tmpiro), blue(tmpiro));
+          var tmpiro = getColorFromImage(tmpbaseimg, tmpx, tmpy, width, height);
           noStroke();
           fill(tmpiro);
           if(cellshape == "rectangle") rect(tmpx, tmpy, cellsize, cellsize);
@@ -96,27 +103,21 @@ function draw() {
           var c1 = createVector((p1.x+p2.x+p3.x)/3, (p1.y+p2.y+p3.y)/3)
           var c2 = createVector((p4.x+p2.x+p3.x)/3, (p4.y+p2.y+p3.y)/3)
 
-          var tmpiro;
-          tmpiro = tmpbaseimg.get(
-            map(c1.x, 0, width, 0, tmpbaseimg.width),
-            map(c1.y, 0, height, 0, tmpbaseimg.height)
-            );
-          tmpiro = color(red(tmpiro), green(tmpiro), blue(tmpiro));
+          var tmpiro = getColorFromImage(tmpbaseimg, c1.x, c1.y, width, height);
           noStroke();
           fill(tmpiro);
           drawTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
 
-          tmpiro = tmpbaseimg.get(
-            map(c2.x, 0, width, 0, tmpbaseimg.width),
-            map(c2.y, 0, height, 0, tmpbaseimg.height)
-            );
-          tmpiro = color(red(tmpiro), green(tmpiro), blue(tmpiro));
+          var tmpiro = getColorFromImage(tmpbaseimg, c2.x, c2.y, width, height);
           noStroke();
           fill(tmpiro);
           drawTriangle(p4.x, p4.y, p2.x, p2.y, p3.x, p3.y);
         }
       }
     }
+
+
+    overlaycolorinfo(tmpbaseimg);
   }
 }
 
@@ -160,6 +161,93 @@ function handleFileSelect(evt) { // image handling function
     })(f);
     reader.readAsDataURL(f);
   }
+}
+
+function overlaycolorinfo(_tmpimg){ // so far count in rect
+  var kpoints = [];
+  var kcentroids = [];
+  var kitr = 0;
+
+  for (var blocky = 0; blocky < height; blocky+=cellsize) {
+    for (var blockx = 0; blockx < width; blockx+=cellsize) {
+      var tmpiro = getColorFromImage(_tmpimg, blockx, blocky, width, height);
+      fill(0);
+      var tmphue = hue(tmpiro);
+      textAlign(LEFT, TOP);
+      text(nf(tmphue, 3, 0), blockx, blocky)
+
+      kpoints.push({
+        ar: [red(tmpiro), green(tmpiro), blue(tmpiro)],
+        gr: kitr
+      });
+      kitr++;
+      if(kitr >= knum) kitr = 0;
+    }
+  }
+
+  for(var l = 0; l < kloop; l++){
+
+    // initialize kcentroids
+    kcentroids = [];
+    for(var tmpgr = 0; tmpgr < knum; tmpgr++){
+      var tmpar = new Array(kpoints[0].ar.length);
+      for(var i = 0; i < tmpar.length; i++){
+        tmpar[i] = 0;
+      }
+      kcentroids.push({
+        ar: tmpar,
+        gr: tmpgr,
+        size: 0
+      });
+    }
+
+    // update centroid per group = get gravity
+    for(tmpp of kpoints){ // loop of points
+      var tmpgid = tmpp.gr;
+      kcentroids[tmpgid].size+=1;
+      for(var i = 0; i < kpoints[0].ar.length; i++){ // loop of array of the point
+        kcentroids[tmpgid].ar[i] += tmpp.ar[i];
+      }
+    }
+    for(tmpc of kcentroids){ // loop of centroids
+      for(var i = 0; i < tmpc.ar.length; i++){ // loop of array of the centroid
+        tmpc.ar[i] /= tmpc.size;
+      }
+    }
+
+    // reasign groupd
+    for(tmpp of kpoints){ // loop of points
+      var tmpdist = getdist(tmpp.ar, kcentroids[0].ar);
+      for(var i = 1; i < kcentroids.length; i++){ // loop of centroids
+        if(tmpdist > getdist(tmpp.ar, kcentroids[i].ar)){
+          tmpdist = getdist(tmpp.ar, kcentroids[i].ar);
+          tmpp.gr = i;
+        }
+      }
+      // console.log(kcentroids.length, tmpp.gr);
+    }
+  }
+
+  // recoloring
+  var loopitr = 0;
+  for (var blocky = 0; blocky < height; blocky+=cellsize) {
+    for (var blockx = 0; blockx < width; blockx+=cellsize) {
+      fill(color(kcentroids[kpoints[loopitr].gr].ar));
+      loopitr += 1;
+      rect(blockx, blocky, cellsize, cellsize);
+    }
+  }
+
+
+}
+
+function getdist(_ar1, _ar2){
+  if(_ar1.length != _ar2.length) return null;
+  var dist = 0;
+  for(var i = 0; i < _ar1.length; i++){
+    dist += pow(_ar1[i] - _ar2[i], 2);
+  }
+  return sqrt(dist);
 }
 
 </script>
