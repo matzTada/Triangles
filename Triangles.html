@@ -117,7 +117,7 @@ function draw() {
     }
 
 
-    overlaycolorinfo(tmpbaseimg);
+    reductColorByKmeans(tmpbaseimg);
   }
 }
 
@@ -163,82 +163,102 @@ function handleFileSelect(evt) { // image handling function
   }
 }
 
-function overlaycolorinfo(_tmpimg){ // so far count in rect
+function reductColorByKmeans(_tmpimg){ // so far count in rect
+  // preparing data
   var kpoints = [];
-  var kcentroids = [];
-  var kitr = 0;
-
   for (var blocky = 0; blocky < height; blocky+=cellsize) {
     for (var blockx = 0; blockx < width; blockx+=cellsize) {
       var tmpiro = getColorFromImage(_tmpimg, blockx, blocky, width, height);
-      fill(0);
-      var tmphue = hue(tmpiro);
-      textAlign(LEFT, TOP);
-      text(nf(tmphue, 3, 0), blockx, blocky)
-
       kpoints.push({
         ar: [red(tmpiro), green(tmpiro), blue(tmpiro)],
-        gr: kitr
       });
-      kitr++;
-      if(kitr >= knum) kitr = 0;
     }
   }
 
-  for(var l = 0; l < kloop; l++){
-
-    // initialize kcentroids
-    kcentroids = [];
-    for(var tmpgr = 0; tmpgr < knum; tmpgr++){
-      var tmpar = new Array(kpoints[0].ar.length);
-      for(var i = 0; i < tmpar.length; i++){
-        tmpar[i] = 0;
-      }
-      kcentroids.push({
-        ar: tmpar,
-        gr: tmpgr,
-        size: 0
-      });
-    }
-
-    // update centroid per group = get gravity
-    for(tmpp of kpoints){ // loop of points
-      var tmpgid = tmpp.gr;
-      kcentroids[tmpgid].size+=1;
-      for(var i = 0; i < kpoints[0].ar.length; i++){ // loop of array of the point
-        kcentroids[tmpgid].ar[i] += tmpp.ar[i];
-      }
-    }
-    for(tmpc of kcentroids){ // loop of centroids
-      for(var i = 0; i < tmpc.ar.length; i++){ // loop of array of the centroid
-        tmpc.ar[i] /= tmpc.size;
-      }
-    }
-
-    // reasign groupd
-    for(tmpp of kpoints){ // loop of points
-      var tmpdist = getdist(tmpp.ar, kcentroids[0].ar);
-      for(var i = 1; i < kcentroids.length; i++){ // loop of centroids
-        if(tmpdist > getdist(tmpp.ar, kcentroids[i].ar)){
-          tmpdist = getdist(tmpp.ar, kcentroids[i].ar);
-          tmpp.gr = i;
-        }
-      }
-      // console.log(kcentroids.length, tmpp.gr);
-    }
-  }
+  var result = kmeans({
+    points: kpoints,
+    dimension: kpoints[0].ar.length,
+    numcluster: knum,
+    numloop: kloop
+  });
+  kpoints = result.points;
+  kcentroids = result.centroids;
 
   // recoloring
   var loopitr = 0;
   for (var blocky = 0; blocky < height; blocky+=cellsize) {
     for (var blockx = 0; blockx < width; blockx+=cellsize) {
       fill(color(kcentroids[kpoints[loopitr].gr].ar));
-      loopitr += 1;
+      loopitr++;
       rect(blockx, blocky, cellsize, cellsize);
     }
   }
+}
 
+function kmeans(inputdata){
+  var points = inputdata.points;
+  var numcluster = inputdata.numcluster;
+  var numloop = inputdata.numloop;
+  var dimension = inputdata.dimension;
+  var centroids = [];
 
+  var initialgr = 0;
+  for(tmpp of points){ // put initial group
+    tmpp.gr = initialgr;
+    if(++initialgr >= numcluster) initialgr = 0;
+  }
+
+  // loop start
+  for(var l = 0; l < numloop; l++){
+    // initialize centroids
+    centroids = [];
+    for(var tmpgr = 0; tmpgr < numcluster; tmpgr++){
+      var tmpar = new Array(dimension); // preparing 0 array
+      for(var ai = 0; ai < dimension; ai++) tmpar[ai] = 0;
+      centroids.push({
+        ar: tmpar, // array of centroid
+        gr: tmpgr, // groupd id of centroind
+        size: 0 // the number of points which belongs to this centroid
+      });
+    }
+
+    // update centroid per group = get gravity
+    for(tmpp of points){ // loop of points
+      var tmpgid = tmpp.gr;
+      centroids[tmpgid].size++;
+      for(var ai = 0; ai < dimension; ai++){ // loop of array of the point
+        centroids[tmpgid].ar[ai] += tmpp.ar[ai];
+      }
+    }
+    for(tmpc of centroids){ // loop of centroids
+      for(var ai = 0; ai < dimension; ai++){ // loop of array of the centroid
+        tmpc.ar[ai] /= tmpc.size;
+      }
+    }
+
+    // reasign groupd
+    for(tmpp of points){ // loop of points
+      var tmpdist = getdist(tmpp.ar, centroids[0].ar);
+      for(var ci = 1; ci < centroids.length; ci++){ // loop of centroids
+        if(tmpdist > getdist(tmpp.ar, centroids[ci].ar)){
+          tmpdist = getdist(tmpp.ar, centroids[ci].ar);
+          tmpp.gr = ci;
+        }
+      }
+    }
+  }
+
+  // return data
+  // points, kcentroid,
+  returndata = {
+    points: points,
+    centroids: centroids,
+    dimension: dimension,
+    numcluster: knum,
+    numloop: numloop
+  };
+
+  return returndata;
 }
 
 function getdist(_ar1, _ar2){
