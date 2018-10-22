@@ -41,8 +41,10 @@ var kloop = 10;
 var gui;
 var guivisible = true;
 
-var cellshape = ["rectangle", "triangle", "circle"];
+var cellshape = ["analyze", "rectangle", "triangle", "circle"];
 
+var countcolorflag = true;
+var orgsize = 100;
 
 function setup() {
   // Setting up p5js canvas
@@ -53,7 +55,7 @@ function setup() {
   // for GUI
   gui = createGui("MATZTRI");
   gui.addGlobals(
-    "cellsize", "cellshape", "knum", "kloop"
+    "cellsize", "cellshape", "knum", "kloop", "countcolorflag", "orgsize"
     );
 
   // load sample image.
@@ -74,50 +76,46 @@ function draw() {
   var tmpbaseimg;
   if(gazous.length > 0){ // deside color
     var tmpbaseimg = gazous[gazous.length - 1];
-  }
-  if(gazous.length > 0){ // deside color
-    var tmpbaseimg = gazous[gazous.length - 1];
 
-    // if(cellshape == "rectangle" || cellshape == "circle"){
-    //   for (var tmpy = 0; tmpy < height; tmpy+=cellsize) {
-    //     for (var tmpx = 0; tmpx < width; tmpx+=cellsize) {
-    //       var tmpiro = getColorFromImage(tmpbaseimg, tmpx, tmpy, width, height);
-    //       noStroke();
-    //       fill(tmpiro);
-    //       if(cellshape == "rectangle") rect(tmpx, tmpy, cellsize, cellsize);
-    //       else if(cellshape == "circle") ellipse(tmpx, tmpy, cellsize, cellsize);
-    //     }
-    //   }
-    // }else if(cellshape == "triangle"){
-    //   // for Triangle
-    //   var toggle = true;
-    //   for (var tmpy = 0; tmpy < height; tmpy+= sqrt(3)*cellsize/2) {
-    //     toggle = !toggle;
-    //     var tmpx = -1*cellsize;
-    //     if(toggle) tmpx += 0.5*cellsize;
-    //     for (; tmpx < width; tmpx+=cellsize) {
-    //       var p1 = createVector(tmpx, tmpy);
-    //       var p2 = createVector(tmpx + cellsize, tmpy);
-    //       var p3 = createVector(tmpx + 0.5*cellsize, tmpy + sqrt(3)*cellsize/2);
-    //       var p4 = createVector(tmpx + 1.5*cellsize, tmpy + sqrt(3)*cellsize/2);
-    //       var c1 = createVector((p1.x+p2.x+p3.x)/3, (p1.y+p2.y+p3.y)/3)
-    //       var c2 = createVector((p4.x+p2.x+p3.x)/3, (p4.y+p2.y+p3.y)/3)
-    //
-    //       var tmpiro = getColorFromImage(tmpbaseimg, c1.x, c1.y, width, height);
-    //       noStroke();
-    //       fill(tmpiro);
-    //       drawTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
-    //
-    //       var tmpiro = getColorFromImage(tmpbaseimg, c2.x, c2.y, width, height);
-    //       noStroke();
-    //       fill(tmpiro);
-    //       drawTriangle(p4.x, p4.y, p2.x, p2.y, p3.x, p3.y);
-    //     }
-    //   }
-    // }
+    if(cellshape == "rectangle" || cellshape == "circle"){
+      for (var tmpy = 0; tmpy < height; tmpy+=cellsize) {
+        for (var tmpx = 0; tmpx < width; tmpx+=cellsize) {
+          var tmpiro = getColorFromImage(tmpbaseimg, tmpx, tmpy, width, height);
+          noStroke();
+          fill(tmpiro);
+          if(cellshape == "rectangle") rect(tmpx, tmpy, cellsize, cellsize);
+          else if(cellshape == "circle") ellipse(tmpx, tmpy, cellsize, cellsize);
+        }
+      }
+    }else if(cellshape == "triangle"){
+      // for Triangle
+      var toggle = true;
+      for (var tmpy = 0; tmpy < height; tmpy+= sqrt(3)*cellsize/2) {
+        toggle = !toggle;
+        var tmpx = -1*cellsize;
+        if(toggle) tmpx += 0.5*cellsize;
+        for (; tmpx < width; tmpx+=cellsize) {
+          var p1 = createVector(tmpx, tmpy);
+          var p2 = createVector(tmpx + cellsize, tmpy);
+          var p3 = createVector(tmpx + 0.5*cellsize, tmpy + sqrt(3)*cellsize/2);
+          var p4 = createVector(tmpx + 1.5*cellsize, tmpy + sqrt(3)*cellsize/2);
+          var c1 = createVector((p1.x+p2.x+p3.x)/3, (p1.y+p2.y+p3.y)/3)
+          var c2 = createVector((p4.x+p2.x+p3.x)/3, (p4.y+p2.y+p3.y)/3)
 
+          var tmpiro = getColorFromImage(tmpbaseimg, c1.x, c1.y, width, height);
+          noStroke();
+          fill(tmpiro);
+          drawTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
 
-    reductColorByKmeans(tmpbaseimg);
+          var tmpiro = getColorFromImage(tmpbaseimg, c2.x, c2.y, width, height);
+          noStroke();
+          fill(tmpiro);
+          drawTriangle(p4.x, p4.y, p2.x, p2.y, p3.x, p3.y);
+        }
+      }
+    }else if(cellshape == "analyze"){
+      reductColorByKmeans(tmpbaseimg);
+    }
   }
 }
 
@@ -194,66 +192,66 @@ function reductColorByKmeans(_tmpimg){ // so far count in rect
     }
   }
 
-  // point for delaunay triangle drawing
-  var vts = [];
-  // counting org
-  var orgsize = cellsize * 10;
-  for (var orgy = 0; orgy < height; orgy+=orgsize) {
-    for (var orgx = 0; orgx < width; orgx+=orgsize) {
+  if(countcolorflag){
+    // point for delaunay triangle drawing
+    var vts = [];
+    // counting org
+    // var orgsize = cellsize * 10;
+    for (var orgy = 0; orgy < height; orgy+=orgsize) {
+      for (var orgx = 0; orgx < width; orgx+=orgsize) {
 
-      var grar = [];
+        var grar = [];
 
-      for (var blocky = orgy; blocky < orgy+orgsize && blocky < height; blocky+=cellsize) {
-        for (var blockx = orgx; blockx < orgx+orgsize && blockx < width; blockx+=cellsize) {
-          var loopitr = ceil(blockx/cellsize) + ceil(blocky/cellsize)*ceil(width/cellsize); // use ceil function regarding points prepartion process
-          var tmpgr = kpoints[loopitr].gr;
-          grar.push(tmpgr);
+        for (var blocky = orgy; blocky < orgy+orgsize && blocky < height; blocky+=cellsize) {
+          for (var blockx = orgx; blockx < orgx+orgsize && blockx < width; blockx+=cellsize) {
+            var loopitr = ceil(blockx/cellsize) + ceil(blocky/cellsize)*ceil(width/cellsize); // use ceil function regarding points prepartion process
+            var tmpgr = kpoints[loopitr].gr;
+            grar.push(tmpgr);
+          }
+        }
+
+        var grar = grar.filter(function(x, i, self){ // remove redundancy
+          return self.indexOf(x) === i;
+        });
+
+        var numkindinorg = grar.length;
+
+        stroke(127);
+        noFill();
+        rect(orgx, orgy, orgsize, orgsize);
+        fill(127);
+        textAlign(CENTER, CENTER);
+        text(numkindinorg, orgx + orgsize/2, orgy+orgsize/2)
+
+        // console.log(grar.length, ceil(height/orgsize), ceil(width/orgsize));
+
+
+        // add pointfs for delaunay triangles
+        for (var i = 0; i < numkindinorg; i++) {
+          var v = createVector(random(orgx, orgx + orgsize), random(orgy, orgy + orgsize));
+          vts.push(v);
         }
       }
-
-      var grar = grar.filter(function(x, i, self){
-        return self.indexOf(x) === i;
-      });
-
-      var numkindinorg = grar.length;
-
-      stroke(127);
-      noFill();
-      rect(orgx, orgy, orgsize, orgsize);
-      fill(127);
-      textAlign(CENTER, CENTER);
-      text(numkindinorg, orgx + orgsize/2, orgy+orgsize/2)
-
-      // console.log(grar.length, ceil(height/orgsize), ceil(width/orgsize));
-
-
-      // add pointfs for delaunay triangles
-      for (var i = 0; i < numkindinorg; i++) {
-        var v = createVector(random(orgx, orgx + orgsize), random(orgy, orgy + orgsize));
-        vts.push(v);
-      }
     }
+  // // delaunay triangle visualization
+  // var delaunayTriangulation = new DelaunayTriangulation();
+  // for (var i = 0; i < vts.length; i++) {
+  //   delaunayTriangulation.add(vts[i]);
+  // }
+  // var triangles = delaunayTriangulation.getTriangles();
+  // // drawing
+  // for (var ti = 0; ti < triangles.length; ti++) {
+  //   var t = triangles[ti];
+  //   var tmpx = (t.vertices[0].x + t.vertices[1].x + t.vertices[2].x)/3;
+  //   var tmpy = (t.vertices[0].y + t.vertices[1].y + t.vertices[2].y)/3;
+  //   var tmpiro = getColorFromImage(_tmpimg, tmpx, tmpy, width, height);
+  //   fill(tmpiro);
+  //   drawTriangle(
+  //     t.vertices[0].x, t.vertices[0].y,
+  //     t.vertices[1].x, t.vertices[1].y,
+  //     t.vertices[2].x, t.vertices[2].y);
+  // }
   }
-
-  // delaunay triangle visualization
-  var delaunayTriangulation = new DelaunayTriangulation();
-  for (var i = 0; i < vts.length; i++) {
-    delaunayTriangulation.add(vts[i]);
-  }
-  var triangles = delaunayTriangulation.getTriangles();
-  // drawing
-  for (var ti = 0; ti < triangles.length; ti++) {
-    var t = triangles[ti];
-    var tmpx = (t.vertices[0].x + t.vertices[1].x + t.vertices[2].x)/3;
-    var tmpy = (t.vertices[0].y + t.vertices[1].y + t.vertices[2].y)/3;
-    var tmpiro = getColorFromImage(_tmpimg, tmpx, tmpy, width, height);
-    fill(tmpiro);
-    drawTriangle(
-      t.vertices[0].x, t.vertices[0].y,
-      t.vertices[1].x, t.vertices[1].y,
-      t.vertices[2].x, t.vertices[2].y);
-  }
-
 }
 
 function kmeans(inputdata){
