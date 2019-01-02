@@ -8,7 +8,7 @@ See [BoxFitting](https://github.com/matzTada/BoxFitting) as an example of applic
 " target="_blank"><img src="http://img.youtube.com/vi/-ipP9jfTaEQ/0.jpg"
 alt="movie on youtube" width=40% border="10" /></a>  
 [movie on youtube](https://www.youtube.com/watch?v=-ipP9jfTaEQ)  
-demo: http://matztada.github.io/other/triangles/Triangles.html
+demo: <http://matztada.github.io/other/triangles/Triangles.html>
 
 ## To Do
 
