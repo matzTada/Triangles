@@ -13,3 +13,4 @@ demo: <http://matztada.github.io/other/triangles/Triangles.html>
 ## To Do
 
 ## Ideas, memo
+* K-Meansで色分類ってところまでできてる as of 2018/Dec
