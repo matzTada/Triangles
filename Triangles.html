@@ -59,7 +59,8 @@ function setup() {
     );
 
   // load sample image.
-  gazous.push(loadImage("./resources/sample.jpg"));
+  // gazous.push(loadImage("./resources/sample.jpg"));
+  gazous.push(loadImage("http://matztada.github.io/other/triangles/resources/sample.jpg"));
 }
 
 function getColorFromImage(_tmpimg, _x, _y, _w, _h){
@@ -193,8 +194,6 @@ function reductColorByKmeans(_tmpimg){ // so far count in rect
   }
 
   if(countcolorflag){
-    // point for delaunay triangle drawing
-    var vts = [];
     // counting org
     // var orgsize = cellsize * 10;
     for (var orgy = 0; orgy < height; orgy+=orgsize) {
@@ -224,33 +223,8 @@ function reductColorByKmeans(_tmpimg){ // so far count in rect
         text(numkindinorg, orgx + orgsize/2, orgy+orgsize/2)
 
         // console.log(grar.length, ceil(height/orgsize), ceil(width/orgsize));
-
-
-        // add pointfs for delaunay triangles
-        for (var i = 0; i < numkindinorg; i++) {
-          var v = createVector(random(orgx, orgx + orgsize), random(orgy, orgy + orgsize));
-          vts.push(v);
-        }
       }
     }
-  // // delaunay triangle visualization
-  // var delaunayTriangulation = new DelaunayTriangulation();
-  // for (var i = 0; i < vts.length; i++) {
-  //   delaunayTriangulation.add(vts[i]);
-  // }
-  // var triangles = delaunayTriangulation.getTriangles();
-  // // drawing
-  // for (var ti = 0; ti < triangles.length; ti++) {
-  //   var t = triangles[ti];
-  //   var tmpx = (t.vertices[0].x + t.vertices[1].x + t.vertices[2].x)/3;
-  //   var tmpy = (t.vertices[0].y + t.vertices[1].y + t.vertices[2].y)/3;
-  //   var tmpiro = getColorFromImage(_tmpimg, tmpx, tmpy, width, height);
-  //   fill(tmpiro);
-  //   drawTriangle(
-  //     t.vertices[0].x, t.vertices[0].y,
-  //     t.vertices[1].x, t.vertices[1].y,
-  //     t.vertices[2].x, t.vertices[2].y);
-  // }
   }
 }
 
@@ -327,95 +301,6 @@ function getdist(_ar1, _ar2){
     dist += pow(_ar1[i] - _ar2[i], 2);
   }
   return sqrt(dist);
-}
-
-function DelaunayTriangulation() {
-  this.triangles = [];
-  this.vertices = [];
-  this.superVertices = [];
-
-  this.add = function(_newv) {
-
-    for (var i = 0; i < this.vertices.length; i++) { // duplicate same point
-      if(_newv.x == this.vertices[i].x && _newv.y == this.vertices[i].y) {
-        return;
-      }
-    }
-
-    this.vertices.push(_newv);
-    var nextTriangles = [];
-    var newTriangles = [];
-    for (var ti = 0; ti < this.triangles.length; ti++) {
-      var tri = this.triangles[ti];
-      if(tri.circumCircle.isInCircle(_newv)) {
-        newTriangles = newTriangles.concat(tri.divide(_newv));
-      } else {
-        nextTriangles.push(tri);
-      }
-    }
-
-    for (var ti = 0; ti < newTriangles.length; ti++) {
-      var tri = newTriangles[ti];
-      var isIllegal = false;
-      for (var vi = 0; vi < this.vertices.length; vi++) {
-        if (this.isIllegalTriangle(tri, this.vertices[vi])) {
-          isIllegal = true;
-          break;
-        }
-      }
-      if (!isIllegal) {
-        nextTriangles.push(tri);
-      }
-    }
-
-    this.triangles = nextTriangles;
-  }
-
-  this.getTriangles = function() {
-    var ts = [];
-
-    for (var ti = 0; ti < this.triangles.length; ti++) {
-      var t = this.triangles[ti];
-      var hasSuperVertex = false;
-      for (var vi = 0; vi < 3; vi++) {
-        if (t.isContain(this.superVertices[vi])) {
-          hasSuperVertex = true;
-        }
-      }
-      if (!hasSuperVertex) {
-        ts.push(t);
-      }
-    }
-
-    return ts;
-  }
-
-  this.getTrianglesWithSuperTriangle = function() {
-    return this.triangles;
-  }
-
-  this.isIllegalTriangle = function(t, v) {
-    if(t.isContain(v)) {
-      return false;
-    }
-    return t.circumCircle.isInCircle(v);
-  }
-
-  var center = createVector(width / 2, height / 2);
-  var radius = sqrt(sq(width) + sq(height)) / 2;
-  var v1 = createVector(center.x - sqrt(3) * radius, center.y - radius);
-  var v2 = createVector(center.x + sqrt(3) * radius, center.y - radius);
-  var v3 = createVector(center.x, center.y +  2 * radius);
-  var t = new Triangle([v1, v2, v3]);
-
-  this.superVertices.push(v1);
-  this.superVertices.push(v2);
-  this.superVertices.push(v3);
-  this.vertices.push(v1);
-  this.vertices.push(v2);
-  this.vertices.push(v3);
-  this.triangles.push(t);
-
 }
 
 function Triangle(_vertices) {
