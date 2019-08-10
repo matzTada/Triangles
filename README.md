@@ -13,4 +13,5 @@ demo: <http://matztada.github.io/other/triangles/Triangles.html>
 ## To Do
 
 ## Ideas, memo
+* 3DのBoxでHue, Saturation, ValueのどれかをZ軸の値として描画することを追加 as of 2019/Aug
 * K-Meansで色分類ってところまでできてる as of 2018/Dec
