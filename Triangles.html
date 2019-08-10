@@ -41,22 +41,23 @@ var kloop = 10;
 var gui;
 var guivisible = true;
 
-var cellshape = ["analyze", "rectangle", "triangle", "circle"];
+var cellshape = ["box", "rectangle", "triangle", "circle", "analyze", ];
+
+var hsvselect = ["hue", "saturation", "value"]
 
 var countcolorflag = true;
 var orgsize = 100;
 
 function setup() {
   // Setting up p5js canvas
-  var can = createCanvas(windowWidth, windowHeight);
+  var can = createCanvas(windowWidth, windowHeight*0.95, WEBGL);
   can.parent("p5canvas");
-  background(127);
 
   // for GUI
   gui = createGui("MATZTRI");
   gui.addGlobals(
-    "cellsize", "cellshape", "knum", "kloop", "countcolorflag", "orgsize"
-    );
+    "cellsize", "cellshape", "hsvselect", "knum", "kloop", "countcolorflag", "orgsize"
+  );
 
   // load sample image.
   // gazous.push(loadImage("./resources/sample.jpg"));
@@ -74,51 +75,128 @@ function getColorFromImage(_tmpimg, _x, _y, _w, _h){
 function draw() {
   background(127);
 
-  var tmpbaseimg;
-  if(gazous.length > 0){ // deside color
-    var tmpbaseimg = gazous[gazous.length - 1];
+  // --- for 3D visualize
+  orbitControl()
 
-    if(cellshape == "rectangle" || cellshape == "circle"){
-      for (var tmpy = 0; tmpy < height; tmpy+=cellsize) {
-        for (var tmpx = 0; tmpx < width; tmpx+=cellsize) {
-          var tmpiro = getColorFromImage(tmpbaseimg, tmpx, tmpy, width, height);
-          noStroke();
-          fill(tmpiro);
-          if(cellshape == "rectangle") rect(tmpx, tmpy, cellsize, cellsize);
-          else if(cellshape == "circle") ellipse(tmpx, tmpy, cellsize, cellsize);
-        }
+  // --- for coloring process
+  var tmpbaseimg = gazous[gazous.length - 1]; // get last data
+
+  if(cellshape == "rectangle" || cellshape == "circle"){
+    translate(-width/2, -height/2, 0);
+    for (var tmpy = 0; tmpy < height; tmpy+=cellsize) {
+      for (var tmpx = 0; tmpx < width; tmpx+=cellsize) {
+        var tmpiro = getColorFromImage(tmpbaseimg, tmpx, tmpy, width, height);
+        noStroke();
+        fill(tmpiro);
+        if(cellshape == "rectangle") rect(tmpx, tmpy, cellsize, cellsize);
+        else if(cellshape == "circle") ellipse(tmpx, tmpy, cellsize, cellsize);
       }
-    }else if(cellshape == "triangle"){
-      // for Triangle
-      var toggle = true;
-      for (var tmpy = 0; tmpy < height; tmpy+= sqrt(3)*cellsize/2) {
-        toggle = !toggle;
-        var tmpx = -1*cellsize;
-        if(toggle) tmpx += 0.5*cellsize;
-        for (; tmpx < width; tmpx+=cellsize) {
-          var p1 = createVector(tmpx, tmpy);
-          var p2 = createVector(tmpx + cellsize, tmpy);
-          var p3 = createVector(tmpx + 0.5*cellsize, tmpy + sqrt(3)*cellsize/2);
-          var p4 = createVector(tmpx + 1.5*cellsize, tmpy + sqrt(3)*cellsize/2);
-          var c1 = createVector((p1.x+p2.x+p3.x)/3, (p1.y+p2.y+p3.y)/3)
-          var c2 = createVector((p4.x+p2.x+p3.x)/3, (p4.y+p2.y+p3.y)/3)
-
-          var tmpiro = getColorFromImage(tmpbaseimg, c1.x, c1.y, width, height);
-          noStroke();
-          fill(tmpiro);
-          drawTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
-
-          var tmpiro = getColorFromImage(tmpbaseimg, c2.x, c2.y, width, height);
-          noStroke();
-          fill(tmpiro);
-          drawTriangle(p4.x, p4.y, p2.x, p2.y, p3.x, p3.y);
-        }
-      }
-    }else if(cellshape == "analyze"){
-      reductColorByKmeans(tmpbaseimg);
     }
+  }else if(cellshape == "triangle"){
+    translate(-width/2, -height/2, 0);
+    var toggle = true;
+    for (var tmpy = 0; tmpy < height; tmpy+= sqrt(3)*cellsize/2) {
+      toggle = !toggle;
+      var tmpx = -1*cellsize;
+      if(toggle) tmpx += 0.5*cellsize;
+      for (; tmpx < width; tmpx+=cellsize) {
+        var p1 = createVector(tmpx, tmpy);
+        var p2 = createVector(tmpx + cellsize, tmpy);
+        var p3 = createVector(tmpx + 0.5*cellsize, tmpy + sqrt(3)*cellsize/2);
+        var p4 = createVector(tmpx + 1.5*cellsize, tmpy + sqrt(3)*cellsize/2);
+        var c1 = createVector((p1.x+p2.x+p3.x)/3, (p1.y+p2.y+p3.y)/3)
+        var c2 = createVector((p4.x+p2.x+p3.x)/3, (p4.y+p2.y+p3.y)/3)
+
+        var tmpiro = getColorFromImage(tmpbaseimg, c1.x, c1.y, width, height);
+        noStroke();
+        fill(tmpiro);
+        drawTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
+
+        var tmpiro = getColorFromImage(tmpbaseimg, c2.x, c2.y, width, height);
+        noStroke();
+        fill(tmpiro);
+        drawTriangle(p4.x, p4.y, p2.x, p2.y, p3.x, p3.y);
+      }
+    }
+  }else if(cellshape == "box"){
+    translate(0, 0, -500);
+    rotateX(radians(30));
+    // rotateZ(radians(210) + frameCount * 0.01);
+    translate(-width/2, -height/2, 0);
+    for (var tmpy = 0; tmpy < height; tmpy+=cellsize) {
+      for (var tmpx = 0; tmpx < width; tmpx+=cellsize) {
+        var tmpiro = getColorFromImage(tmpbaseimg, tmpx, tmpy, width, height);
+
+        fill(tmpiro);
+
+        push();
+
+
+        tmphsv = rgb2hsv([red(tmpiro), green(tmpiro), blue(tmpiro)]);
+
+        // for box shape
+        tmpzmax = 300;
+        switch (hsvselect) {
+          case "hue":
+            tmpz = tmphsv[0] / 360;
+            break;
+          case "saturation":
+            tmpz = tmphsv[1] / 1;
+            break;
+          case "value":
+            tmpz = tmphsv[2] / 1;
+            break;
+        }
+        tmpz = tmpz * tmpzmax;
+
+
+        translate(tmpx, tmpy, tmpz/2);
+        box(cellsize, cellsize, tmpz, 0, 0);
+
+        pop();
+      }
+    }
+  }else if(cellshape == "analyze"){
+    translate(-width/2, -height/2, 0);
+    reductColorByKmeans(tmpbaseimg);
   }
 }
+
+function rgb2hsv ( rgb ) {
+	var r = rgb[0] / 255 ;
+	var g = rgb[1] / 255 ;
+	var b = rgb[2] / 255 ;
+
+	var max = Math.max( r, g, b ) ;
+	var min = Math.min( r, g, b ) ;
+	var diff = max - min ;
+
+	var h = 0 ;
+
+	switch( min ) {
+		case max :
+			h = 0 ;
+		break ;
+
+		case r :
+			h = (60 * ((b - g) / diff)) + 180 ;
+		break ;
+
+		case g :
+			h = (60 * ((r - b) / diff)) + 300 ;
+		break ;
+
+		case b :
+			h = (60 * ((g - r) / diff)) + 60 ;
+		break ;
+	}
+
+	var s = max == 0 ? 0 : diff / max ;
+	var v = max ;
+
+	return [ h, s, v ] ;
+}
+
 
 function drawTriangle(x1, y1, x2, y2, x3, y3){
   beginShape();
