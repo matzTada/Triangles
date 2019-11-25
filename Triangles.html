@@ -41,7 +41,7 @@ var kloop = 10;
 var gui;
 var guivisible = true;
 
-var cellshape = ["box", "rectangle", "triangle", "circle", "analyze", ];
+var cellshape = ["rectangle", "triangle", "circle", "analyze", "box", ];
 
 var hsvselect = ["hue", "saturation", "value"]
 
@@ -76,7 +76,7 @@ function draw() {
   background(127);
 
   // --- for 3D visualize
-  orbitControl()
+  if(cellshape == "box") orbitControl()
 
   // --- for coloring process
   var tmpbaseimg = gazous[gazous.length - 1]; // get last data
