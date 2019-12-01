@@ -28,6 +28,25 @@ function guiChange(){
   else gui.hide();
 }
 
+function keyTyped(){
+  switch (key) {
+    case 't':
+      for(var tmppp of pixelpoints){
+        tmppp.triggerOirign();
+      }
+      break;
+    case 'r':
+      for(var tmppp of pixelpoints){
+        tmppp.moveflag = true;
+      }
+      break;
+    case 's':
+      for(var tmppp of pixelpoints){
+        tmppp.moveflag = false;
+      }
+      break;
+  }
+}
 
 var cellsize = 30;
 var gazous = [];
@@ -99,18 +118,39 @@ function PixelPoint(_param){
   this.ox = _param.ox; // original x
   this.oy = _param.oy; // original y
   this.c = _param.c;
+  this.moveflag = true;
   this.v = _param.v;
   this.a = _param.a;
   this.size = _param.size;
+  this.hasTarget = false;
+  this.tx = this.ox;
+  this.ty = this.oy;
 
   this.update = function(){
-    var nextx = this.x + this.v * cos(radians(this.a));
-    if(nextx < 0|| nextx >= width) this.a = 180 - this.a;
-    this.x += this.v * cos(radians(this.a));
+    if(this.hasTarget){
+      this.x += this.v * (this.tx - this.x) / dist(this.tx, this.ty, this.x, this.y);
+      this.y += this.v * (this.ty - this.y) / dist(this.ty, this.ty, this.y, this.y);
+      if(dist(this.tx, this.ty, this.x, this.y) <= this.v){
+        this.x = this.tx;
+        this.y = this.ty;
+        this.hasTarget = false;
+        this.moveflag = false;
+      }
+    }else if(this.moveflag){
+      var nextx = this.x + this.v * cos(radians(this.a));
+      if(nextx < 0|| nextx >= width) this.a = 180 - this.a;
+      this.x += this.v * cos(radians(this.a));
 
-    var nexty = this.y + this.v * sin(radians(this.a));
-    if(nexty < 0|| nexty >= height) this.a = - this.a;
-    this.y += this.v * sin(radians(this.a));
+      var nexty = this.y + this.v * sin(radians(this.a));
+      if(nexty < 0|| nexty >= height) this.a = - this.a;
+      this.y += this.v * sin(radians(this.a));
+    }
+  }
+
+  this.triggerOirign = function(){
+    this.hasTarget = true;
+    this.tx = this.ox;
+    this.ty = this.oy;
   }
 
   this.display = function(){
