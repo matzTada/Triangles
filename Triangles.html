@@ -29,9 +29,10 @@ function guiChange(){
 }
 
 
-var cellsize = 85;
+var cellsize = 30;
 var gazous = [];
 var gazoucnt = 0;
+var pixelpoints = [];
 
 // kmeans
 var knum = 10;
@@ -41,13 +42,18 @@ var kloop = 10;
 var gui;
 var guivisible = true;
 
-var cellshape = ["rectangle", "triangle", "circle", "analyze", "box", ];
+var cellshape = ["pixeldance", "rectangle", "triangle", "circle", "analyze", "box"];
 
 var hsvselect = ["hue", "saturation", "value"]
 
 var countcolorflag = true;
 var orgsize = 100;
 var colorstep = 256;
+
+var pdimg;
+function preload(){
+  pdimg = loadImage("http://matztada.github.io/other/triangles/resources/sample.jpg");
+}
 
 function setup() {
   // Setting up p5js canvas
@@ -63,6 +69,55 @@ function setup() {
   // load sample image.
   // gazous.push(loadImage("./resources/sample.jpg"));
   gazous.push(loadImage("http://matztada.github.io/other/triangles/resources/sample.jpg"));
+
+  // === initial setting for pixel dance ===
+  for (var tmpy = 0; tmpy < height; tmpy+=cellsize) {
+    for (var tmpx = 0; tmpx < width; tmpx+=cellsize) {
+      var tmpcolor = pdimg.get(
+        map(tmpx, 0, width, 0, pdimg.width),
+        map(tmpy, 0, height, 0, pdimg.height)
+        );
+      console.log(tmpx, tmpy, tmpcolor, red(tmpcolor), green(tmpcolor), blue(tmpcolor));
+      pixelpoints.push(
+        new PixelPoint({
+          x : tmpx,
+          y : tmpy,
+          ox : tmpx,
+          oy : tmpy,
+          c : tmpcolor,
+          v : 3,
+          a : 360*random(0,1),
+          size : cellsize,
+      }));
+    }
+  }
+}
+
+function PixelPoint(_param){
+  this.x = _param.x;
+  this.y = _param.y;
+  this.ox = _param.ox; // original x
+  this.oy = _param.oy; // original y
+  this.c = _param.c;
+  this.v = _param.v;
+  this.a = _param.a;
+  this.size = _param.size;
+
+  this.update = function(){
+    var nextx = this.x + this.v * cos(radians(this.a));
+    if(nextx < 0|| nextx >= width) this.a = 180 - this.a;
+    this.x += this.v * cos(radians(this.a));
+
+    var nexty = this.y + this.v * sin(radians(this.a));
+    if(nexty < 0|| nexty >= height) this.a = - this.a;
+    this.y += this.v * sin(radians(this.a));
+  }
+
+  this.display = function(){
+    noStroke();
+    fill(this.c);
+    ellipse(this.x, this.y, this.size, this.size);
+  }
 }
 
 function getColorFromImage(_tmpimg, _x, _y, _w, _h){
@@ -168,6 +223,12 @@ function draw() {
   }else if(cellshape == "analyze"){
     translate(-width/2, -height/2, 0);
     reductColorByKmeans(tmpbaseimg);
+  }else if(cellshape == "pixeldance"){
+    translate(-width/2, -height/2, 0);
+    for(var tmppp of pixelpoints){
+      tmppp.update();
+      tmppp.display();
+    }
   }
 }
 
