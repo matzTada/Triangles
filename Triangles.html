@@ -61,7 +61,7 @@ var kloop = 10;
 var gui;
 var guivisible = true;
 
-var cellshape = ["primary", "pixeldance", "rectangle", "triangle", "circle", "analyze", "box"];
+var cellshape = ["rectangle", "triangle", "circle", "primary", "pixeldance", "analyze", "box"];
 
 var hsvselect = ["hue", "saturation", "value"]
 
@@ -310,7 +310,7 @@ function draw() {
           map(green(tmpiro), 0, 255, 0, 500),
           map(blue(tmpiro), 0, 255, 0, 500),
         );
-        sphere(min(1, cellsize/10));
+        sphere(max(1, cellsize/5));
         pop();
       }
     }
